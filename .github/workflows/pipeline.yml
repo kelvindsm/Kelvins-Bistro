@@ -7,23 +7,8 @@ on:
     branches: [ "develop" ]
 
 jobs:
-  estagio_build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout do código
-        uses: actions/checkout@v5
-      - name: Configurar Node.js 18
-        uses: actions/setup-node@v5
-        with:
-          node-version: '18'
-      - name: Instalar dependências
-        run: npm install
-      - name: Verificar sintaxe do projeto
-        run: node --check index.js
-        
   estagio_lint:
     runs-on: ubuntu-latest
-    needs: estagio_build 
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -31,10 +16,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - name: Gerar lockfile temporário
-        run: npm install --package-lock-only
+          cache: 'npm' # Ativa o cache das dependências
       - name: Instalar dependências
-        run: npm ci
+        run: npm ci # Requer que o package-lock.json esteja commitado no repositório
+      - name: Verificar sintaxe básica do projeto
+        run: node --check index.js
       - name: Criar configuração temporária do ESLint
         run: |
           cat > eslint.config.js <<'EOF'
@@ -55,5 +41,19 @@ jobs:
           EOF
       - name: Rodar lint
         run: npm run lint
+
+  estagio_build:
+    runs-on: ubuntu-latest
+    needs: estagio_lint # Garante que o build só ocorra se o código passar pelo lint
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+      - name: Configurar Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - name: Instalar dependências
+        run: npm ci
       - name: Rodar build
         run: npm run build
