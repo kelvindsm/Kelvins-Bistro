@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 
@@ -35,6 +36,46 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.get('/', (req, res) => res.render('login'));
+
+app.get('/register', (req, res) => res.render('register'));
+// NOVA ROTA: Cadastro de usuário com senha criptografada
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+    const saltRounds = 10; 
+
+    try {
+        const pwd_Password = await bcrypt.hash(password, saltRounds);
+        await pool.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, pwd_Password]);
+        res.send('Usuário criado com sucesso! <a href="/">Fazer Login</a>');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Erro ao criar usuário.");
+    }
+});
+
+// ROTA ATUALIZADA: Login verificando o hash da senha
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+        
+        if (rows.length > 0) {
+            const user = rows[0];
+            const match = await bcrypt.compare(password, user.password);
+            
+            if (match) {
+                res.redirect('/dashboard');
+            } else {
+                res.send('<h1>Login Inválido</h1><a href="/">Voltar</a>');
+            }
+        } else {
+            res.send('<h1>Login Inválido</h1><a href="/">Voltar</a>');
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Erro no banco.");
+    }
+});
 
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
