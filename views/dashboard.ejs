@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MarmitaTech - Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .grid { display: flex; gap: 20px; }
+        .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 300px; }
+        .kanban-board { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; }
+        .kanban-column { flex: 1; min-width: 250px; background: #f4f4f4; border-radius: 8px; padding: 10px; }
+        .kanban-column h3 { text-align: center; margin-top: 0; }
+        .kanban-card { background: white; border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .kanban-card p { margin: 5px 0; }
+        .kanban-card form { margin-top: 10px; }
+        .btn-advance { background-color: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; width: 100%; }
+        .btn-advance:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Painel Administrativo - MarmitaTech</h1>
+    <div class="grid">
+        <div class="card">
+            <h3>Novo Item (Ingrediente)</h3>
+            <form action="/add-item" method="POST">
+                <input type="text" name="name" placeholder="Nome (Ex: Batata Doce)" required><br><br>
+                <input type="text" name="category" placeholder="Categoria (Ex: Carboidrato)"><br><br>
+                <input type="number" step="0.01" name="price" placeholder="Preço (Ex: 15.50)" required><br><br>
+                <button type="submit">Cadastrar Item</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Itens Cadastrados</h3>
+            <ul>
+                <% items.forEach(item => { %>
+                    <li><%= item.name %> (<%= item.category %>) - R$ <%= item.price %></li>
+                <% }) %>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>Novo Pedido</h3>
+            <form action="/orders" method="POST">
+                <input type="text" name="customer_name" placeholder="Nome do Cliente" required><br><br>
+                <select name="item_id" required>
+                    <option value="" disabled selected>Selecione a Marmita</option>
+                    <% items.forEach(item => { %>
+                        <option value="<%= item.id %>"><%= item.name %> - R$ <%= item.price %></option>
+                    <% }) %>
+                </select><br><br>
+                <button type="submit">Criar Pedido</button>
+            </form>
+        </div>
+    </div>
+
+    <hr>
+    <h2>📦 Pedidos Ativos (Kanban)</h2>
+    <div class="kanban-board">
+        <% const colunas = ['Aberto', 'Cozinha', 'Entrega', 'Entregue']; %>
+        <% colunas.forEach(coluna => { %>
+            <div class="kanban-column">
+                <h3><%= coluna %></h3>
+                <% orders.filter(o => o.status === coluna).forEach(order => { %>
+                    <div class="kanban-card">
+                        <strong>Pedido #<%= order.id %></strong>
+                        <p>Cliente: <%= order.customer_name %></p>
+                        <p>Item: <%= order.item_name %></p>
+                        
+                        <% if (coluna !== 'Entregue') { %>
+                            <form action="/orders/<%= order.id %>/advance" method="POST">
+                                <button type="submit" class="btn-advance">Avançar Status ➔</button>
+                            </form>
+                        <% } %>
+                    </div>
+                <% }) %>
+            </div>
+        <% }) %>
+    </div>
+</body>
+</html>
