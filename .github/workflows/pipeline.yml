@@ -168,8 +168,8 @@ jobs:
         with:
           # Escaneia a imagem específica que acabou de ser criada
           image-ref: '${{ env.IMAGE_NAME }}:${{ github.sha }}'
-          format: 'json'
-          output: 'trivy-report.json'
+          format: 'sarif'
+          output: 'trivy-report.sarif'
           ignore-unfixed: true
           vuln-type: 'os,library'
 
@@ -182,7 +182,7 @@ jobs:
           echo "sonar.sourceEncoding=UTF-8" >> sonar-project.properties
           echo "sonar.exclusions=node_modules/**,.git/**,.github/**,coverage/**,dist/**" >> sonar-project.properties
 
-      - name: SonarQube lendo o Trivy (External Issues)
+      - name: SonarQube lendo o Trivy (SARIF)
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.TOKEN_SONARQUBE }}
@@ -190,4 +190,4 @@ jobs:
         with:
           args: >
             -Dsonar.branch.name=${{ github.ref_name }}
-            -Dsonar.externalIssuesReportPaths=trivy-report.json
+            -Dsonar.sarifReportPaths=trivy-report.sarif
