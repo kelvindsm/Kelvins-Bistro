@@ -1,83 +1,124 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const mysql = require('mysql2/promise');
+const bcrypt = require('bcrypt');
 const path = require('path');
-const bcrypt = require('bcryptjs');
+const mysql = require('mysql2/promise'); 
 
 const app = express();
-
-const dbConfig = {
-    host: process.env.DB_HOST || 'db',
-    user: process.env.DB_USER || 'user',
-    password: process.env.DB_PASS || 'password',
-    database: process.env.DB_NAME || 'marmitadb'
-};
-
-let pool;
-
-async function connectWithRetry() {
-    console.log('🔍 [INFRA] Tentando conectar ao MySQL...');
-    for (let i = 1; i <= 10; i++) {
-        try {
-            pool = mysql.createPool(dbConfig);
-            await pool.query('SELECT 1');
-            console.log('✅ [DATABASE] Conectado ao MySQL com sucesso!');
-            return;
-        } catch (err) {
-            console.log(`⚠️ [DATABASE] Tentativa ${i}/10 falhou. Aguardando...`);
-            await new Promise(res => setTimeout(res, 3000));
-        }
-    }
-    process.exit(1);
-}
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// ==========================================
+// CONFIGURAÇÃO DO BANCO DE DADOS
+// ==========================================
+const pool = mysql.createPool({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASS || 'password',
+    database: process.env.DB_NAME || 'marmitadb',
+    port: process.env.DB_PORT || 3306,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
+
+async function connectWithRetry() {
+    let retries = 5;
+    while (retries > 0) {
+        try {
+            const connection = await pool.getConnection();
+            console.log('✅ Conectado ao banco de dados com sucesso!');
+            connection.release();
+            return;
+        } catch (err) {
+            console.error(`⏳ Erro ao conectar no banco. Tentativas restantes: ${retries - 1}`);
+            console.error(`Motivo: ${err.message}`);
+            retries -= 1;
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+    }
+    throw new Error('❌ Não foi possível conectar ao banco de dados após várias tentativas.');
+}
+
+// ==========================================
+// FUNÇÕES E ROTAS DA APLICAÇÃO
+// ==========================================
+
+// Função para validar entrada de dados
+function validateInput(data) {
+    const { username, password, price } = data;
+
+    if (!username || username.trim() === '') {
+        return { valid: false, message: 'O nome de usuário não pode estar vazio.' };
+    }
+
+    if (price !== undefined && (isNaN(price) || price <= 0)) {
+        return { valid: false, message: 'O preço deve ser um número positivo.' };
+    }
+
+    if (!password || password.trim() === '') {
+        return { valid: false, message: 'A senha não pode estar vazia.' };
+    }
+
+    return { valid: true };
+}
+
 app.get('/', (req, res) => res.render('login'));
 
 app.get('/register', (req, res) => res.render('register'));
-// NOVA ROTA: Cadastro de usuário com senha criptografada
+
+// Rota para cadastro de usuário com validação
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
-    const saltRounds = 10; 
+    const saltRounds = 10;
+
+    // Validação dos dados de entrada
+    const validation = validateInput({ username, password });
+    if (!validation.valid) {
+        return res.status(400).send(validation.message);
+    }
 
     try {
-        const pwd_Password = await bcrypt.hash(password, saltRounds);
-        await pool.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, pwd_Password]);
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        await pool.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword]);
         res.send('Usuário criado com sucesso! <a href="/">Fazer Login</a>');
     } catch (err) {
         console.error(err);
-        res.status(500).send("Erro ao criar usuário.");
+        res.status(500).send('Erro ao criar usuário.');
     }
 });
 
-// ROTA ATUALIZADA: Login verificando o hash da senha
+// Rota para login com validação
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
+
+    // Validação dos dados de entrada
+    const validation = validateInput({ username, password });
+    if (!validation.valid) {
+        return res.status(400).send(validation.message);
+    }
+
     try {
         const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
-        
-        if (rows.length > 0) {
-            const user = rows[0];
-            const match = await bcrypt.compare(password, user.password);
-            
-            if (match) {
-                res.redirect('/dashboard');
-            } else {
-                res.send('<h1>Login Inválido</h1><a href="/">Voltar</a>');
-            }
-        } else {
-            res.send('<h1>Login Inválido</h1><a href="/">Voltar</a>');
+        if (rows.length === 0) {
+            return res.status(400).send('Usuário não encontrado.');
         }
+
+        const user = rows[0];
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).send('Senha inválida.');
+        }
+
+        // Redireciona o usuário para o dashboard após o login bem-sucedido
+        res.redirect('/dashboard');
     } catch (err) {
         console.error(err);
-        res.status(500).send("Erro no banco.");
+        res.status(500).send('Erro ao realizar login.');
     }
 });
-
-// Removed redundant /login route without bcrypt
 
 app.post('/add-item', async (req, res) => {
     const { name, category, price } = req.body;
@@ -139,11 +180,20 @@ app.post('/orders/:id/advance', async (req, res) => {
 });
 
 app.get('/dashboard', async (req, res) => {
-    const [items] = await pool.query('SELECT * FROM items');
-    const [orders] = await pool.query('SELECT orders.*, items.name AS item_name FROM orders LEFT JOIN items ON orders.item_id = items.id');
-    res.render('dashboard', { items, orders });
+    try {
+        const [items] = await pool.query('SELECT * FROM items');
+        const [orders] = await pool.query('SELECT orders.*, items.name AS item_name FROM orders LEFT JOIN items ON orders.item_id = items.id');
+        res.render('dashboard', { items, orders });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Erro ao carregar o dashboard.");
+    }
 });
 
+// Inicia a aplicação garantindo que o banco está conectado primeiro
 connectWithRetry().then(() => {
     app.listen(3000, () => console.log('🚀 MARMITATECH PRO ONLINE NA PORTA 3000'));
+}).catch(err => {
+    console.error('Falha crítica na inicialização:', err);
+    process.exit(1);
 });
