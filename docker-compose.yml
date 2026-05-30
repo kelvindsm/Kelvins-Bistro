@@ -35,20 +35,20 @@ services:
         condition: service_healthy
 
   # Serviço 2 renomeado de "app" para "kelvins-bistro" para evitar conflito
-  app:
-    kelvins-bistro:
-      image: kelvindsm/kelvins-bistro:staging
-      container_name: kelvins-bistro-app # <-- Nome único mantido aqui
-      ports:
-        - "8084:3000"
-      environment:
-        DB_HOST: mysql-infra
-        DB_PORT: 3306
-        DB_USER: root
-        DB_PASS: password
-        DB_NAME: kelvinbistrodb
-      networks:
-        - rede_alunos
+
+  kelvins-bistro:
+    image: kelvindsm/kelvins-bistro:staging
+    container_name: kelvins-bistro-app # <-- Nome único mantido aqui
+    ports:
+      - "8084:3000"
+    environment:
+      DB_HOST: mysql-infra
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASS: password
+      DB_NAME: kelvinbistrodb
+    networks:
+      - rede_alunos
 
 networks:
   rede_alunos:
