@@ -33,22 +33,3 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
-  # Serviço 2 renomeado de "app" para "kelvins-bistro" para evitar conflito
-  kelvins-bistro:
-    image: kelvindsm/kelvins-bistro:staging
-    container_name: kelvins-bistro-app # <-- Nome único mantido aqui
-    ports:
-      - "8084:3000"
-    environment:
-      DB_HOST: 54.89.88.5
-      DB_USER: root
-      DB_PASS: password
-      DB_NAME: marmitadb
-    # Se precisar que este app participe da rede externa, descomente as linhas abaixo:
-    # networks:
-    #   - rede_alunos
-
-networks:
-  rede_alunos:
-    external: true
