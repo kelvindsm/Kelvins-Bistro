@@ -1,4 +1,9 @@
+-- Define o banco com charset e collation que suportam acentuação e emojis
 CREATE DATABASE IF NOT EXISTS kelvinbistrodb;
+
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 USE kelvinbistrodb;
 
 CREATE TABLE IF NOT EXISTS users (
@@ -22,4 +27,7 @@ CREATE TABLE IF NOT EXISTS orders (
     FOREIGN KEY (item_id) REFERENCES items(id)
 );
 
-INSERT INTO items (name, category, price) VALUES ('Arroz Branco', 'Base', 15.50), ('Feijão Preto', 'Grão', 12.00);
+-- Agora os inserts com acentuação funcionarão perfeitamente
+INSERT INTO items (name, category, price) 
+VALUES ('Arroz Branco', 'Base', 15.50), 
+       ('Feijão Preto', 'Grão', 12.00);
