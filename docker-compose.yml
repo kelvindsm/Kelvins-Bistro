@@ -1,7 +1,27 @@
 services:
-  kelvins-bistro:
-    image: kelvindsm/kelvins-bistro:staging
-    container_name: kelvins-bistro-app # <-- Nome único mantido aqui
+  db:
+    image: mysql:8.0
+    container_name: marmitatech-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: kelvinbistrodb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Serviço 1 renomeado de "app" para "marmitatech-app" para evitar conflito
+  marmitatech-app:
+    image: kelvindsm/marmitatech-app:latest # <-- Corrigido para a imagem certa
+    build: .
+    container_name: marmitatech # <-- Corrigido para o nome certo (único)
     ports:
       - "8084:3000"
     environment:
@@ -10,9 +30,6 @@ services:
       DB_USER: root
       DB_PASS: password
       DB_NAME: kelvinbistrodb
-    networks:
-      - rede_alunos
-
-networks:
-  rede_alunos:
-    external: true
+    depends_on:
+      db:
+        condition: service_healthy

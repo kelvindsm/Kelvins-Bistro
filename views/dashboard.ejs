@@ -1,80 +1,418 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
+
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MarmitaTech - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .grid { display: flex; gap: 20px; }
-        .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 300px; }
-        .kanban-board { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; }
-        .kanban-column { flex: 1; min-width: 250px; background: #f4f4f4; border-radius: 8px; padding: 10px; }
-        .kanban-column h3 { text-align: center; margin-top: 0; }
-        .kanban-card { background: white; border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .kanban-card p { margin: 5px 0; }
-        .kanban-card form { margin-top: 10px; }
-        .btn-advance { background-color: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; width: 100%; }
-        .btn-advance:hover { background-color: #0056b3; }
+        /* PALETA DE CORES EXTRAÍDA DA IMAGEM */
+        :root {
+            --marrom: #7A3E1F;
+            --terracota: #C6754B;
+            --pessego: #E7AB89;
+            --azul-claro: #84AFC6;
+            --azul-escuro: #28648B;
+
+            /* Mapeamento para os elementos do sistema */
+            --bg-color: var(--azul-claro);
+            /* Fundo suave da página */
+            --text-main: #334155;
+            /* Cor do texto geral (cinza escuro para leitura) */
+            --text-heading: var(--azul-escuro);
+            /* Títulos em azul escuro */
+            --blue-primary: var(--azul-escuro);
+            /* Bordas e botões secundários */
+            --orange-primary: var(--terracota);
+            /* Botões principais */
+            --orange-hover: var(--marrom);
+            /* Hover dos botões principais */
+            --card-bg: #FFFFFF;
+            /* Fundo dos cartões */
+            --border-color: #CBD5E1;
+            /* Bordas neutras e discretas */
+            --input-bg: #FFFFFF;
+            /* Fundo dos campos de digitação */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 30px;
+            margin: 0;
+        }
+
+        h2 {
+            color: var(--marrom);
+            font-weight: 700;
+        }
+
+        h1 {
+            color: var(--azul-escuro);
+            font-weight: 700;
+            margin-bottom: 30px;
+            font-size: 28px;
+            border-bottom: 3px solid var(--azul-escuro);
+            padding-bottom: 10px;
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+
+        h2 {
+            background: rgba(255, 255, 255, 0.8);
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+
+        h3 {
+            color: var(--text-heading);
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            color: var(--marrom);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            border-top: 5px solid var(--azul-escuro);
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--terracota);
+            box-shadow: 0 0 0 3px rgba(198, 117, 75, 0.2);
+        }
+
+        button[type="submit"]:not(.btn-advance) {
+            background-color: var(--orange-primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+
+        button[type="submit"]:not(.btn-advance):hover {
+            background-color: var(--orange-hover);
+        }
+
+        /* Estilos do Novo Pedido */
+        .order-type-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: #F8FAFC;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .order-type-selector label {
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-heading);
+        }
+
+        .ingredients-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            background-color: #F8FAFC;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .checkbox-item input {
+            width: auto;
+            margin: 0 10px 0 0;
+            accent-color: var(--terracota);
+        }
+
+        /* Personalizando a barra de rolagem */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--azul-claro);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--azul-escuro);
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.3);
+            margin: 40px 0;
+        }
+
+        /* Kanban */
+        .kanban-board {
+            display: flex;
+            gap: 24px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        .kanban-column {
+            flex: 1;
+            min-width: 280px;
+            background: var(--pessego);
+            border-radius: 12px;
+            padding: 16px;
+            border-top: 5px solid var(--marrom);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .kanban-column h3 {
+            text-align: center;
+            color: var(--marrom);
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .kanban-card {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid var(--azul-escuro);
+        }
+
+        .kanban-card strong {
+            display: block;
+            color: var(--azul-escuro);
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .kanban-card p {
+            margin: 4px 0;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .kanban-card form {
+            margin-top: 16px;
+        }
+
+        .btn-advance {
+            background-color: var(--azul-escuro);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .btn-advance:hover {
+            background-color: var(--azul-claro);
+            color: var(--azul-escuro);
+            font-weight: 700;
+        }
     </style>
 </head>
+
 <body>
     <h1>Painel Administrativo - MarmitaTech</h1>
+
     <div class="grid">
         <div class="card">
-            <h3>Novo Item (Ingrediente)</h3>
-            <form action="/add-item" method="POST">
-                <input type="text" name="name" placeholder="Nome (Ex: Batata Doce)" required><br><br>
-                <input type="text" name="category" placeholder="Categoria (Ex: Carboidrato)"><br><br>
-                <input type="number" step="0.01" name="price" placeholder="Preço (Ex: 15.50)" required><br><br>
-                <button type="submit">Cadastrar Item</button>
+            <h3>Cadastrar Ingrediente</h3>
+            <form action="/add-ingredient" method="POST">
+                <input type="text" name="name" placeholder="Nome (Ex: Batata Doce)" required>
+                <input type="text" name="category" placeholder="Categoria (Ex: Carboidrato)">
+                <input type="number" step="0.01" name="price" placeholder="Preço Adicional (Ex: 3.50)" required>
+                <button type="submit">Salvar Ingrediente</button>
             </form>
         </div>
 
         <div class="card">
-            <h3>Itens Cadastrados</h3>
-            <ul>
-                <% items.forEach(item => { %>
-                    <li><%= item.name %> (<%= item.category %>) - R$ <%= item.price %></li>
-                <% }) %>
-            </ul>
+            <h3>Cadastrar Marmita Pronta</h3>
+            <form action="/add-premade" method="POST">
+                <input type="text" name="name" placeholder="Nome (Ex: Frango Fit c/ Batata)" required>
+                <input type="text" name="description" placeholder="Descrição rápida">
+                <input type="number" step="0.01" name="price" placeholder="Preço Fixo (Ex: 22.00)" required>
+                <button type="submit">Salvar Marmita Pronta</button>
+            </form>
         </div>
 
         <div class="card">
-            <h3>Novo Pedido</h3>
-            <form action="/orders" method="POST">
-                <input type="text" name="customer_name" placeholder="Nome do Cliente" required><br><br>
-                <select name="item_id" required>
-                    <option value="" disabled selected>Selecione a Marmita</option>
-                    <% items.forEach(item => { %>
-                        <option value="<%= item.id %>"><%= item.name %> - R$ <%= item.price %></option>
-                    <% }) %>
-                </select><br><br>
+            <h3>Lançar Novo Pedido</h3>
+            <form action="/orders" method="POST" id="form-pedido">
+                <input type="text" name="customer_name" placeholder="Nome do Cliente" required>
+
+                <div class="order-type-selector">
+                    <label>
+                        <input type="radio" name="order_type" value="pronta" checked onchange="toggleOrderType()">
+                        Marmita Pronta
+                    </label>
+                    <label>
+                        <input type="radio" name="order_type" value="personalizada" onchange="toggleOrderType()">
+                        Personalizada
+                    </label>
+                </div>
+
+                <div id="tipo-pronta">
+                    <select name="premade_id">
+                        <option value="" disabled selected>Selecione a Marmita Pronta...</option>
+                        <% preMadeMarmitas.forEach(marmita=> { %>
+                            <option value="<%= marmita.id %>">
+                                <%= marmita.name %> - R$ <%= marmita.price %>
+                            </option>
+                            <% }) %>
+                    </select>
+                </div>
+
+                <div id="tipo-personalizada" style="display: none;">
+                    <div class="section-title">Monte a Marmita:</div>
+                    <div class="ingredients-list">
+                        <% ingredients.forEach(ingrediente=> { %>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="ingredient_ids[]" value="<%= ingrediente.id %>">
+                                <%= ingrediente.name %> (+ R$ <%= ingrediente.price %>)
+                            </label>
+                            <% }) %>
+                    </div>
+                </div>
+
                 <button type="submit">Criar Pedido</button>
             </form>
         </div>
     </div>
 
     <hr>
-    <h2>📦 Pedidos Ativos (Kanban)</h2>
+
+    <h2>📦 Pedidos Ativos</h2>
     <div class="kanban-board">
-        <% const colunas = ['Aberto', 'Cozinha', 'Entrega', 'Entregue']; %>
-        <% colunas.forEach(coluna => { %>
-            <div class="kanban-column">
-                <h3><%= coluna %></h3>
-                <% orders.filter(o => o.status === coluna).forEach(order => { %>
-                    <div class="kanban-card">
-                        <strong>Pedido #<%= order.id %></strong>
-                        <p>Cliente: <%= order.customer_name %></p>
-                        <p>Item: <%= order.item_name %></p>
-                        
-                        <% if (coluna !== 'Entregue') { %>
-                            <form action="/orders/<%= order.id %>/advance" method="POST">
-                                <button type="submit" class="btn-advance">Avançar Status ➔</button>
-                            </form>
-                        <% } %>
-                    </div>
+        <% const colunas=['Aberto', 'Cozinha' , 'Entrega' , 'Entregue' ]; %>
+            <% colunas.forEach(coluna=> { %>
+                <div class="kanban-column">
+                    <h3>
+                        <%= coluna %>
+                    </h3>
+                    <% orders.filter(o=> o.status === coluna).forEach(order => { %>
+                        <div class="kanban-card">
+                            <strong>Pedido #<%= order.id %></strong>
+                            <p>Cliente: <%= order.customer_name %>
+                            </p>
+                            <p>Descrição: <%= order.description %>
+                            </p>
+                            <p><strong>Total: R$ <%= order.total_price %></strong></p>
+
+                            <% if (coluna !=='Entregue' ) { %>
+                                <form action="/orders/<%= order.id %>/advance" method="POST">
+                                    <button type="submit" class="btn-advance">Avançar Status ➔</button>
+                                </form>
+                                <% } %>
+                        </div>
+                        <% }) %>
+                </div>
                 <% }) %>
-            </div>
-        <% }) %>
     </div>
+
+    <script>
+        function toggleOrderType() {
+            const type = document.querySelector('input[name="order_type"]:checked').value;
+            const containerPronta = document.getElementById('tipo-pronta');
+            const containerPersonalizada = document.getElementById('tipo-personalizada');
+            const selectPronta = document.querySelector('select[name="premade_id"]');
+
+            if (type === 'pronta') {
+                containerPronta.style.display = 'block';
+                containerPersonalizada.style.display = 'none';
+                selectPronta.required = true;
+            } else {
+                containerPronta.style.display = 'none';
+                containerPersonalizada.style.display = 'block';
+                selectPronta.required = false;
+            }
+        }
+
+        window.onload = toggleOrderType;
+
+        document.getElementById('form-pedido').addEventListener('submit', function (event) {
+            const type = document.querySelector('input[name="order_type"]:checked').value;
+
+            if (type === 'personalizada') {
+                const checkboxes = document.querySelectorAll('input[name="ingredient_ids[]"]:checked');
+
+                if (checkboxes.length === 0) {
+                    event.preventDefault();
+                    alert("⚠️ Por favor, selecione pelo menos um ingrediente para criar a marmita personalizada!");
+                }
+            }
+        });
+    </script>
 </body>
+
 </html>
