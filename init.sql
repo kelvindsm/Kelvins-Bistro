@@ -1,9 +1,9 @@
 -- Define o banco com charset e collation que suportam acentuação e emojis
+DROP DATABASE IF EXISTS kelvinbistrodb;
 CREATE DATABASE IF NOT EXISTS kelvinbistrodb;
 
 SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
-
 USE kelvinbistrodb;
 
 CREATE TABLE IF NOT EXISTS users (
