@@ -23,11 +23,11 @@ services:
     build: .
     container_name: marmitatech # <-- Corrigido para o nome certo (único)
     ports:
-      - "3000:3000"
+      - "8084:3000"
     environment:
-      DB_HOST: db
-      DB_PORT: 3306  # <-- Corrigido para a porta interna do container
-      DB_USER: user
+      DB_HOST: mysql-infra
+      DB_PORT: 3306
+      DB_USER: root
       DB_PASS: password
       DB_NAME: kelvinbistrodb
     depends_on:
