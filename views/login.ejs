@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MarmitaTech - Login</title>
     <style>
+        /* Paleta de Cores Extraída */
+        :root {
+            --marrom: #7A3E1F;
+            --terracota: #C6754B;
+            --pessego: #E7AB89;
+            --azul-claro: #84AFC6;
+            --azul-escuro: #28648B;
+        }
+
         /* Estilização Geral */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -13,7 +22,8 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            /* Fundo usando os azuis da paleta em um degradê suave */
+            background: linear-gradient(135deg, var(--azul-claro) 0%, var(--azul-escuro) 100%);
         }
 
         /* Container do Formulário */
@@ -21,10 +31,12 @@
             background: white;
             padding: 40px;
             border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.25);
             width: 100%;
             max-width: 350px;
             text-align: center;
+            /* Adicionada uma borda superior para charme extra */
+            border-top: 6px solid var(--terracota); 
         }
 
         /* Logo */
@@ -34,11 +46,12 @@
             object-fit: cover;
             border-radius: 50%;
             margin-bottom: 20px;
-            border: 4px solid #fbd079;
+            /* Cor de pêssego para emoldurar a logo suavemente */
+            border: 4px solid var(--pessego);
         }
 
         h2 {
-            color: #333;
+            color: var(--marrom);
             margin-bottom: 25px;
             font-size: 1.5rem;
         }
@@ -48,22 +61,24 @@
             width: 100%;
             padding: 12px 15px;
             margin-bottom: 15px;
-            border: 2px solid #eee;
+            border: 2px solid #e2e8f0;
             border-radius: 8px;
-            box-sizing: border-box; /* Garante que o padding não estoure a largura */
-            transition: border-color 0.3s ease;
+            box-sizing: border-box; 
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
             outline: none;
+            color: #334155;
         }
 
         input:focus {
-            border-color: #fda085;
+            border-color: var(--terracota);
+            box-shadow: 0 0 0 3px rgba(198, 117, 75, 0.2);
         }
 
         /* Botão */
         button {
             width: 100%;
             padding: 12px;
-            background-color: #ff6b6b;
+            background-color: var(--terracota);
             color: white;
             border: none;
             border-radius: 8px;
@@ -74,7 +89,7 @@
         }
 
         button:hover {
-            background-color: #ee5253;
+            background-color: var(--marrom);
             transform: translateY(-2px);
         }
 
@@ -82,16 +97,22 @@
             transform: translateY(0);
         }
 
-        /* Link extra */
+        /* Links extra */
         .footer-links {
-            margin-top: 20px;
+            margin-top: 15px;
             font-size: 0.9rem;
-            color: #777;
+            color: #64748b;
         }
 
         .footer-links a {
-            color: #ff6b6b;
+            color: var(--azul-escuro);
             text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--terracota);
         }
     </style>
 </head>
@@ -108,9 +129,6 @@
             <button type="submit">Entrar no Sistema</button>
         </form>
 
-        <div class="footer-links">
-            <p>Esqueceu a senha? <a href="#">Clique aqui</a></p>
-        </div>
         <div class="footer-links">
             <p>Não tem cadastro? <a href="/register">Clique aqui</a></p>
         </div>

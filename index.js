@@ -43,10 +43,10 @@ async function connectWithRetry() {
 }
 
 // ==========================================
-// FUNÇÕES E ROTAS DA APLICAÇÃO
+// FUNÇÕES AUXILIARES
 // ==========================================
 
-// Função para validar entrada de dados
+// Função para validar entrada de dados (Login/Registro)
 function validateInput(data) {
     const { username, password, price } = data;
 
@@ -65,7 +65,12 @@ function validateInput(data) {
     return { valid: true };
 }
 
-app.get('/', (req, res) => res.render('login'));
+// ==========================================
+// ROTAS DE AUTENTICAÇÃO
+// ==========================================
+
+// Ajustamos o GET para sempre passar a variável error (inicialmente nula)
+app.get('/', (req, res) => res.render('login', { error: null }));
 
 app.get('/register', (req, res) => res.render('register'));
 
@@ -74,7 +79,6 @@ app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     const saltRounds = 10;
 
-    // Validação dos dados de entrada
     const validation = validateInput({ username, password });
     if (!validation.valid) {
         return res.status(400).send(validation.message);
@@ -90,69 +94,118 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// Rota para login com validação
+// Rota para login com validação e retorno na mesma tela
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
-    // Validação dos dados de entrada
     const validation = validateInput({ username, password });
     if (!validation.valid) {
-        return res.status(400).send(validation.message);
+        // Renderiza a tela de login passando o erro
+        return res.render('login', { error: validation.message });
     }
 
     try {
         const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
         if (rows.length === 0) {
-            return res.status(400).send('Usuário não encontrado.');
+            // Retorna para a tela de login com o erro
+            return res.render('login', { error: 'Usuário não encontrado.' });
         }
 
         const user = rows[0];
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            return res.status(400).send('Senha inválida.');
+            // Retorna para a tela de login com o erro
+            return res.render('login', { error: 'Senha incorreta. Tente novamente.' });
         }
 
-        // Redireciona o usuário para o dashboard após o login bem-sucedido
         res.redirect('/dashboard');
     } catch (err) {
         console.error(err);
-        res.status(500).send('Erro ao realizar login.');
+        return res.render('login', { error: 'Erro interno ao realizar login.' });
     }
 });
 
-app.post('/add-item', async (req, res) => {
+// ==========================================
+// CADASTRO DE CARDÁPIO (DASHBOARD)
+// ==========================================
+
+// Rota para cadastrar um Ingrediente
+app.post('/add-ingredient', async (req, res) => {
     const { name, category, price } = req.body;
     
-    if (!name || name.trim() === '') {
-        return res.status(400).send("O nome não pode estar vazio.");
-    }
+    if (!name || name.trim() === '') return res.status(400).send("O nome não pode estar vazio.");
     
     const numPrice = parseFloat(price);
-    if (isNaN(numPrice) || numPrice <= 0) {
-        return res.status(400).send("O preço deve ser um número positivo.");
-    }
+    if (isNaN(numPrice) || numPrice <= 0) return res.status(400).send("O preço deve ser válido.");
 
     try {
-        await pool.query('INSERT INTO items (name, category, price) VALUES (?, ?, ?)', [name, category, numPrice]);
+        await pool.query('INSERT INTO ingredients (name, category, price) VALUES (?, ?, ?)', [name, category, numPrice]);
         res.redirect('/dashboard');
     } catch (err) {
         console.error(err);
-        res.status(500).send("Erro ao salvar item.");
+        res.status(500).send("Erro ao salvar ingrediente.");
     }
 });
 
-app.post('/orders', async (req, res) => {
-    const { customer_name, item_id } = req.body;
-    if (!customer_name || !item_id) {
-        return res.status(400).send("Nome do cliente e marmita são obrigatórios.");
-    }
+// Rota para cadastrar uma Marmita Pronta
+app.post('/add-premade', async (req, res) => {
+    const { name, description, price } = req.body;
     
+    if (!name || name.trim() === '') return res.status(400).send("O nome não pode estar vazio.");
+    
+    const numPrice = parseFloat(price);
+    if (isNaN(numPrice) || numPrice <= 0) return res.status(400).send("O preço deve ser válido.");
+
     try {
-        await pool.query('INSERT INTO orders (customer_name, item_id, status) VALUES (?, ?, ?)', [customer_name, item_id, 'Aberto']);
+        await pool.query('INSERT INTO pre_made_marmitas (name, description, price) VALUES (?, ?, ?)', [name, description, numPrice]);
         res.redirect('/dashboard');
     } catch (err) {
         console.error(err);
-        res.status(500).send("Erro ao criar pedido.");
+        res.status(500).send("Erro ao salvar marmita pronta.");
+    }
+});
+
+// ==========================================
+// GESTÃO DE PEDIDOS E KANBAN
+// ==========================================
+
+app.post('/orders', async (req, res) => {
+    const { customer_name, order_type, premade_id } = req.body;
+    const ingredient_ids = req.body.ingredient_ids;
+
+    if (!customer_name) return res.status(400).send("Nome do cliente é obrigatório.");
+
+    let description = '';
+    let total_price = 0;
+
+    try {
+        if (order_type === 'pronta') {
+            if (!premade_id) return res.status(400).send("Selecione uma marmita pronta.");
+            
+            const [rows] = await pool.query('SELECT name, price FROM pre_made_marmitas WHERE id = ?', [premade_id]);
+            if (rows.length > 0) {
+                description = `Marmita Pronta: ${rows[0].name}`;
+                total_price = parseFloat(rows[0].price);
+            }
+        } else if (order_type === 'personalizada') {
+            if (!ingredient_ids) return res.status(400).send("Selecione pelo menos um ingrediente.");
+            
+            const ids = Array.isArray(ingredient_ids) ? ingredient_ids : [ingredient_ids];
+            const placeholders = ids.map(() => '?').join(',');
+            const [rows] = await pool.query(`SELECT name, price FROM ingredients WHERE id IN (${placeholders})`, ids);
+            
+            description = `Personalizada: ${rows.map(r => r.name).join(', ')}`;
+            total_price = rows.reduce((sum, item) => sum + parseFloat(item.price), 0);
+        }
+
+        await pool.query(
+            'INSERT INTO orders (customer_name, description, total_price, status) VALUES (?, ?, ?, ?)', 
+            [customer_name, description, total_price, 'Aberto']
+        );
+        res.redirect('/dashboard');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Erro ao processar o pedido.");
     }
 });
 
@@ -179,18 +232,27 @@ app.post('/orders/:id/advance', async (req, res) => {
     }
 });
 
+// ==========================================
+// CARREGAMENTO DO DASHBOARD PRINCIPAL
+// ==========================================
+
 app.get('/dashboard', async (req, res) => {
     try {
-        const [items] = await pool.query('SELECT * FROM items');
-        const [orders] = await pool.query('SELECT orders.*, items.name AS item_name FROM orders LEFT JOIN items ON orders.item_id = items.id');
-        res.render('dashboard', { items, orders });
+        const [ingredients] = await pool.query('SELECT * FROM ingredients');
+        const [preMadeMarmitas] = await pool.query('SELECT * FROM pre_made_marmitas');
+        const [orders] = await pool.query('SELECT * FROM orders ORDER BY id DESC');
+        
+        res.render('dashboard', { ingredients, preMadeMarmitas, orders });
     } catch (err) {
         console.error(err);
         res.status(500).send("Erro ao carregar o dashboard.");
     }
 });
 
-// Inicia a aplicação garantindo que o banco está conectado primeiro
+// ==========================================
+// INICIALIZAÇÃO DO SERVIDOR
+// ==========================================
+
 connectWithRetry().then(() => {
     app.listen(3000, () => console.log('🚀 MARMITATECH PRO ONLINE NA PORTA 3000'));
 }).catch(err => {
