@@ -182,9 +182,11 @@ app.post('/orders', async (req, res) => {
         if (order_type === 'pronta') {
             if (!premade_id) return res.status(400).send("Selecione uma marmita pronta.");
             
-            const [rows] = await pool.query('SELECT name, price FROM pre_made_marmitas WHERE id = ?', [premade_id]);
+            // Adicionado a busca do campo "description"
+            const [rows] = await pool.query('SELECT name, description, price FROM pre_made_marmitas WHERE id = ?', [premade_id]);
             if (rows.length > 0) {
-                description = `Marmita Pronta: ${rows[0].name}`;
+                // Modificado para concatenar o nome da marmita com a composição dela
+                description = `Marmita Pronta: ${rows[0].name} (${rows[0].description || 'Sem descrição'})`;
                 total_price = parseFloat(rows[0].price);
             }
         } else if (order_type === 'personalizada') {
