@@ -234,6 +234,44 @@ app.post('/orders/:id/advance', async (req, res) => {
     }
 });
 
+// Rota para exportar o relatório de vendas em CSV
+app.get('/admin/export', async (req, res) => {
+    try {
+        // ATENÇÃO: Se a sua coluna de data tiver outro nome (ex: 'data_pedido'), 
+        // substitua 'created_at' aqui e no loop forEach abaixo.
+        const [orders] = await pool.query(`
+            SELECT id, customer_name, description, total_price, created_at 
+            FROM orders 
+            ORDER BY created_at ASC
+        `);
+
+        // Cabeçalho do arquivo CSV
+        let csvContent = "ID do Pedido;Cliente;Itens Pedidos;Valor Total (R$);Data do Pedido\n";
+
+        // Preenche o conteúdo com os dados
+        orders.forEach(order => {
+            const dateFormatted = order.created_at ? new Date(order.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }).replace(',', '') : 'Sem data';
+            const cleanDescription = order.description ? order.description.replace(/[\n\r;]/g, ' ') : 'Marmita sem descrição';
+            const cleanCustomer = order.customer_name ? order.customer_name.replace(/[\n\r;]/g, ' ') : 'Não informado';
+            const totalPrice = order.total_price ? parseFloat(order.total_price).toFixed(2) : '0.00';
+
+            csvContent += `${order.id};${cleanCustomer};${cleanDescription};${totalPrice};${dateFormatted}\n`;
+        });
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename=relatorio_vendas_marmitatech.csv');
+
+        // BOM para manter acentuação correta no Excel
+        const BOM = "\uFEFF";
+        res.send(BOM + csvContent);
+
+    } catch (error) {
+        console.error("Erro detalhado ao exportar o relatório:", error);
+        // Agora o erro exato do banco de dados aparecerá na sua tela para facilitar o debug
+        res.status(500).send(`Erro interno ao gerar o arquivo de relatório. Detalhe do erro: ${error.message}`);
+    }
+});
+
 // ==========================================
 // CARREGAMENTO DO DASHBOARD PRINCIPAL
 // ==========================================
@@ -242,7 +280,7 @@ app.get('/dashboard', async (req, res) => {
     try {
         const [ingredients] = await pool.query('SELECT * FROM ingredients');
         const [preMadeMarmitas] = await pool.query('SELECT * FROM pre_made_marmitas');
-        const [orders] = await pool.query('SELECT * FROM orders ORDER BY id DESC');
+        const [orders] = await pool.query('SELECT * FROM orders ORDER BY id ASC');
         
         res.render('dashboard', { ingredients, preMadeMarmitas, orders });
     } catch (err) {
