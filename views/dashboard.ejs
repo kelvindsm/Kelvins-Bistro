@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MarmitaTech - Dashboard</title>
+    <title>Kelvin's Bistrô - Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* PALETA DE CORES EXTRAÍDA DA IMAGEM */
@@ -282,11 +282,37 @@
             color: var(--azul-escuro);
             font-weight: 700;
         }
+
+        /* Estilo do Botão de Exportação de Relatório */
+        .btn-export {
+            background-color: var(--azul-escuro);
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-export:hover {
+            background-color: var(--azul-claro);
+            color: var(--azul-escuro);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
     </style>
 </head>
 
 <body>
-    <h1>Painel Administrativo - MarmitaTech</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 30px; background: rgba(255, 255, 255, 0.6); padding: 10px 20px; border-radius: 8px; border-bottom: 3px solid var(--azul-escuro);">
+        <h1 style="margin: 0; padding: 0; border-bottom: none; background: none; border-radius: 0; font-size: 28px;">Painel Administrativo - Kelvin's Bistrô</h1>
+        <a href="/admin/export" class="btn-export">Baixar Relatório (CSV)</a>
+    </div>
 
     <div class="grid">
         <div class="card">
@@ -356,7 +382,7 @@
 
     <hr>
 
-    <h2>📦 Pedidos Ativos</h2>
+    <h2>Pedidos Ativos</h2>
     <div class="kanban-board">
         <% const colunas=['Aberto', 'Cozinha' , 'Entrega' , 'Entregue' ]; %>
             <% colunas.forEach(coluna=> { %>
@@ -424,7 +450,7 @@
 
                 if (checkboxes.length === 0) {
                     event.preventDefault();
-                    alert("⚠️ Por favor, selecione pelo menos um ingrediente para criar a marmita personalizada!");
+                    alert("Por favor, selecione pelo menos um ingrediente para criar a marmita personalizada!");
                 }
             }
         });

@@ -43,6 +43,7 @@ CREATE TABLE orders (
     customer_name VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(20) NOT NULL DEFAULT 'Aberto'
 );
 
