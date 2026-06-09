@@ -15,25 +15,15 @@
             --azul-claro: #84AFC6;
             --azul-escuro: #28648B;
 
-            /* Mapeamento para os elementos do sistema */
             --bg-color: var(--azul-claro);
-            /* Fundo suave da página */
             --text-main: #334155;
-            /* Cor do texto geral (cinza escuro para leitura) */
             --text-heading: var(--azul-escuro);
-            /* Títulos em azul escuro */
             --blue-primary: var(--azul-escuro);
-            /* Bordas e botões secundários */
             --orange-primary: var(--terracota);
-            /* Botões principais */
             --orange-hover: var(--marrom);
-            /* Hover dos botões principais */
             --card-bg: #FFFFFF;
-            /* Fundo dos cartões */
             --border-color: #CBD5E1;
-            /* Bordas neutras e discretas */
             --input-bg: #FFFFFF;
-            /* Fundo dos campos de digitação */
         }
 
         body {
@@ -182,6 +172,19 @@
             accent-color: var(--terracota);
         }
 
+        /* Descrição da marmita pronta */
+        .description-hint {
+            font-size: 13px;
+            color: var(--azul-escuro);
+            background: #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: -8px;
+            margin-bottom: 16px;
+            display: none; /* Escondido por padrão */
+            font-style: italic;
+        }
+
         /* Personalizando a barra de rolagem */
         ::-webkit-scrollbar {
             width: 8px;
@@ -323,14 +326,15 @@
                 </div>
 
                 <div id="tipo-pronta">
-                    <select name="premade_id">
+                    <select name="premade_id" id="select-marmita-pronta">
                         <option value="" disabled selected>Selecione a Marmita Pronta...</option>
                         <% preMadeMarmitas.forEach(marmita=> { %>
-                            <option value="<%= marmita.id %>">
+                            <option value="<%= marmita.id %>" data-description="<%= marmita.description %>">
                                 <%= marmita.name %> - R$ <%= marmita.price %>
                             </option>
-                            <% }) %>
+                        <% }) %>
                     </select>
+                    <div id="descricao-marmita" class="description-hint"></div>
                 </div>
 
                 <div id="tipo-personalizada" style="display: none;">
@@ -363,10 +367,8 @@
                     <% orders.filter(o=> o.status === coluna).forEach(order => { %>
                         <div class="kanban-card">
                             <strong>Pedido #<%= order.id %></strong>
-                            <p>Cliente: <%= order.customer_name %>
-                            </p>
-                            <p>Descrição: <%= order.description %>
-                            </p>
+                            <p>Cliente: <%= order.customer_name %></p>
+                            <p>Descrição: <%= order.description %></p>
                             <p><strong>Total: R$ <%= order.total_price %></strong></p>
 
                             <% if (coluna !=='Entregue' ) { %>
@@ -397,6 +399,20 @@
                 selectPronta.required = false;
             }
         }
+
+        // --- NOVO SCRIPT PARA MOSTRAR A DESCRIÇÃO DA MARMITA PRONTA ---
+        document.getElementById('select-marmita-pronta').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const description = selectedOption.getAttribute('data-description');
+            const descriptionBox = document.getElementById('descricao-marmita');
+
+            if (description && description.trim() !== '') {
+                descriptionBox.innerHTML = `<strong>Composição:</strong> ${description}`;
+                descriptionBox.style.display = 'block';
+            } else {
+                descriptionBox.style.display = 'none';
+            }
+        });
 
         window.onload = toggleOrderType;
 
