@@ -28,28 +28,41 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
+            background-image: linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65)),
+                url(/img/Plano_de_fundo-Bistro.png);
+            background-size: auto;
+            background-attachment: fixed;
             color: var(--text-main);
             padding: 30px;
             margin: 0;
         }
 
-        h2 {
-            color: var(--marrom);
-            font-weight: 700;
+        .estilo-header {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            margin-bottom: 30px; 
+            background: rgba(255, 255, 255, 0.6); 
+            padding: 10px 20px; 
+            border-radius: 8px; 
+            border-bottom: 5px solid var(--azul-escuro);
+
+            background: rgba(255, 255, 255, 0.22);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10.6px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
         h1 {
             color: var(--azul-escuro);
             font-weight: 700;
-            margin-bottom: 30px;
-            font-size: 28px;
-            border-bottom: 3px solid var(--azul-escuro);
-            padding-bottom: 10px;
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.6);
-            padding: 10px 20px;
-            border-radius: 8px;
+        }
+
+        h2 {
+            color: var(--azul-escuro);
+            font-weight: 700;
         }
 
         h2 {
@@ -85,7 +98,13 @@
             padding: 24px;
             border-radius: 12px;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-            border-top: 5px solid var(--azul-escuro);
+            border-bottom: 5px solid var(--azul-escuro);
+
+            background: rgba(255, 255, 255, 0.60);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10.6px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
         input[type="text"],
@@ -120,14 +139,21 @@
             width: 100%;
             font-weight: 600;
             font-size: 15px;
-            transition: 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
         }
 
         button[type="submit"]:not(.btn-advance):hover {
             background-color: var(--orange-hover);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
 
-        /* Estilos do Novo Pedido */
+        button[type="submit"]:not(.btn-advance):active {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
         .order-type-selector {
             display: flex;
             gap: 15px;
@@ -172,7 +198,6 @@
             accent-color: var(--terracota);
         }
 
-        /* Descrição da marmita pronta */
         .description-hint {
             font-size: 13px;
             color: var(--azul-escuro);
@@ -181,11 +206,10 @@
             border-radius: 6px;
             margin-top: -8px;
             margin-bottom: 16px;
-            display: none; /* Escondido por padrão */
+            display: none;
             font-style: italic;
         }
 
-        /* Personalizando a barra de rolagem */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -283,7 +307,6 @@
             font-weight: 700;
         }
 
-        /* Estilo do Botão de Exportação de Relatório */
         .btn-export {
             background-color: var(--azul-escuro);
             color: white;
@@ -309,8 +332,9 @@
 </head>
 
 <body>
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 30px; background: rgba(255, 255, 255, 0.6); padding: 10px 20px; border-radius: 8px; border-bottom: 3px solid var(--azul-escuro);">
-        <h1 style="margin: 0; padding: 0; border-bottom: none; background: none; border-radius: 0; font-size: 28px;">Painel Administrativo - Kelvin's Bistrô</h1>
+    <div class="estilo-header">
+        <h1 style="margin: 0; padding: 0; border-bottom: none; background: none; border-radius: 0; font-size: 28px;">
+            Painel Administrativo - Kelvin's Bistrô</h1>
         <a href="/admin/export" class="btn-export">Baixar Relatório (CSV)</a>
     </div>
 
@@ -358,7 +382,7 @@
                             <option value="<%= marmita.id %>" data-description="<%= marmita.description %>">
                                 <%= marmita.name %> - R$ <%= marmita.price %>
                             </option>
-                        <% }) %>
+                            <% }) %>
                     </select>
                     <div id="descricao-marmita" class="description-hint"></div>
                 </div>
@@ -382,7 +406,7 @@
 
     <hr>
 
-    <h2>Pedidos Ativos</h2>
+    <h2 class="estilo-header">Pedidos Ativos</h2>
     <div class="kanban-board">
         <% const colunas=['Aberto', 'Cozinha' , 'Entrega' , 'Entregue' ]; %>
             <% colunas.forEach(coluna=> { %>
@@ -393,8 +417,10 @@
                     <% orders.filter(o=> o.status === coluna).forEach(order => { %>
                         <div class="kanban-card">
                             <strong>Pedido #<%= order.id %></strong>
-                            <p>Cliente: <%= order.customer_name %></p>
-                            <p>Descrição: <%= order.description %></p>
+                            <p>Cliente: <%= order.customer_name %>
+                            </p>
+                            <p>Descrição: <%= order.description %>
+                            </p>
                             <p><strong>Total: R$ <%= order.total_price %></strong></p>
 
                             <% if (coluna !=='Entregue' ) { %>
@@ -427,7 +453,7 @@
         }
 
         // --- NOVO SCRIPT PARA MOSTRAR A DESCRIÇÃO DA MARMITA PRONTA ---
-        document.getElementById('select-marmita-pronta').addEventListener('change', function() {
+        document.getElementById('select-marmita-pronta').addEventListener('change', function () {
             const selectedOption = this.options[this.selectedIndex];
             const description = selectedOption.getAttribute('data-description');
             const descriptionBox = document.getElementById('descricao-marmita');

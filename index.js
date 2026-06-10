@@ -9,6 +9,7 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.use('/img', express.static('img'));
 
 // ==========================================
 // CONFIGURAÇÃO DO BANCO DE DADOS
