@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MarmitaTech - Cadastro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Praise&display=swap" rel="stylesheet">
+    <title>Kelvin's Bistrô - Cadastro</title>
     <style>
         /* Paleta de Cores Extraída */
         :root {
@@ -114,6 +117,21 @@
         .footer-links a:hover {
             color: var(--terracota);
         }
+
+        .texto-neon{
+            font-family: "Praise", cursive;
+            font-size: larger;
+            font-style: normal;
+            text-shadow: 
+                #FFF 0px 0px 5px,
+                #FFF 0px 0px 10px,
+                #28648B 0px 0px 15px, 
+                #28648B 0px 0px 20px, 
+                #28648B 0px 0px 30px, 
+                #28648B 0px 0px 40px, 
+                #28648B 0px 0px 50px;
+            color: #FFFFFF;
+        }
     </style>
 </head>
 <body>
@@ -121,7 +139,7 @@
     <div class="login-container">
         <img src="https://t3.ftcdn.net/jpg/02/38/15/94/360_F_238159412_HhVnn8jBWgYG9IoRSlPw2Iz5FMZz93CH.jpg" alt="Logo MarmitaTech" class="logo">
         
-        <h2>Kelvin's Bistro</h2>
+        <h2><div class="texto-neon">Kelvin's Bistro</div></h2>
         
         <form action="/register" method="POST">
             <input type="text" name="username" placeholder="Usuário" required>
@@ -130,7 +148,7 @@
         </form>
 
         <div class="footer-links">
-            <p>Já tem uma conta? <a href="/">Faça login</a></p>
+            <p>Já tem uma conta? <a href="/login">Faça login</a></p>
         </div>
     </div>
 
