@@ -1,15 +1,10 @@
 const express = require('express');
+const session = require('express-session');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const path = require('path');
-const mysql = require('mysql2/promise'); 
-
-const app = express();
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-app.use('/img', express.static('img'));
+const mysql = require('mysql2/promise');
+const MySQLStore = require('express-mysql-session')(session);
 
 // ==========================================
 // CONFIGURAÇÃO DO BANCO DE DADOS
@@ -25,22 +20,39 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
+const sessionStore = new MySQLStore({}, pool);
+const app = express();
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use('/img', express.static('img'));
+app.use(session({
+    secret: 'kerubinpuroveneno', // Uma frase aleatória para criptografar o cookie
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        maxAge: 1000 * 60 * 60 * 2 // O login vai expirar em 2 horas
+    }
+}));
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 async function connectWithRetry() {
     let retries = 5;
     while (retries > 0) {
         try {
             const connection = await pool.getConnection();
-            console.log('✅ Conectado ao banco de dados com sucesso!');
+            console.log('Conectado ao banco de dados com sucesso!');
             connection.release();
             return;
         } catch (err) {
-            console.error(`⏳ Erro ao conectar no banco. Tentativas restantes: ${retries - 1}`);
+            console.error(`Erro ao conectar no banco. Tentativas restantes: ${retries - 1}`);
             console.error(`Motivo: ${err.message}`);
             retries -= 1;
             await new Promise(resolve => setTimeout(resolve, 5000));
         }
     }
-    throw new Error('❌ Não foi possível conectar ao banco de dados após várias tentativas.');
+    throw new Error('Não foi possível conectar ao banco de dados após várias tentativas.');
 }
 
 // ==========================================
@@ -66,17 +78,29 @@ function validateInput(data) {
     return { valid: true };
 }
 
+// Middleware de autenticação
+function verificarAutenticacao(req, res, next) {
+    // Se existir o usuário guardado na sessão, permite o acesso
+    if (req.session && req.session.usuarioLogado) {
+        return next(); // "Pode passar!"
+    }
+    
+    // Se não estiver logado, redireciona para a página de login
+    res.redirect('/login'); 
+}
+
 // ==========================================
 // ROTAS DE AUTENTICAÇÃO
 // ==========================================
 
 // Ajustamos o GET para sempre passar a variável error (inicialmente nula)
 app.get('/', (req, res) => res.render('login', { error: null }));
+app.get('/login', (req, res) => res.render('login', { error: null }));
 
-app.get('/register', (req, res) => res.render('register'));
+app.get('/register', verificarAutenticacao, async (req, res) => res.render('register'));
 
 // Rota para cadastro de usuário com validação
-app.post('/register', async (req, res) => {
+app.post('/register', verificarAutenticacao, async (req, res) => {
     const { username, password } = req.body;
     const saltRounds = 10;
 
@@ -88,7 +112,8 @@ app.post('/register', async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
         await pool.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword]);
-        res.send('Usuário criado com sucesso! <a href="/">Fazer Login</a>');
+        // res.send('Usuário criado com sucesso! <a href="/">Fazer Login</a>');
+        res.redirect('/dashboard');
     } catch (err) {
         console.error(err);
         res.status(500).send('Erro ao criar usuário.');
@@ -101,25 +126,24 @@ app.post('/login', async (req, res) => {
 
     const validation = validateInput({ username, password });
     if (!validation.valid) {
-        // Renderiza a tela de login passando o erro
         return res.render('login', { error: validation.message });
     }
 
     try {
         const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
         if (rows.length === 0) {
-            // Retorna para a tela de login com o erro
             return res.render('login', { error: 'Usuário não encontrado.' });
         }
 
         const user = rows[0];
         const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            // Retorna para a tela de login com o erro
+        if(isPasswordValid){
+            // CORRIGIDO: de 'usuario' para 'username'
+            req.session.usuarioLogado = { nome: username }; 
+            return res.redirect('/dashboard');
+        } else {
             return res.render('login', { error: 'Senha incorreta. Tente novamente.' });
         }
-
-        res.redirect('/dashboard');
     } catch (err) {
         console.error(err);
         return res.render('login', { error: 'Erro interno ao realizar login.' });
@@ -183,10 +207,8 @@ app.post('/orders', async (req, res) => {
         if (order_type === 'pronta') {
             if (!premade_id) return res.status(400).send("Selecione uma marmita pronta.");
             
-            // Adicionado a busca do campo "description"
             const [rows] = await pool.query('SELECT name, description, price FROM pre_made_marmitas WHERE id = ?', [premade_id]);
             if (rows.length > 0) {
-                // Modificado para concatenar o nome da marmita com a composição dela
                 description = `Marmita Pronta: ${rows[0].name} (${rows[0].description || 'Sem descrição'})`;
                 total_price = parseFloat(rows[0].price);
             }
@@ -235,21 +257,19 @@ app.post('/orders/:id/advance', async (req, res) => {
     }
 });
 
-// Rota para exportar o relatório de vendas em CSV
-app.get('/admin/export', async (req, res) => {
+// ==========================================
+// ROTA DE EXPORTAÇÃO (CORRIGIDA COM ASYNC)
+// ==========================================
+app.get('/admin/export', verificarAutenticacao, async (req, res) => {
     try {
-        // ATENÇÃO: Se a sua coluna de data tiver outro nome (ex: 'data_pedido'), 
-        // substitua 'created_at' aqui e no loop forEach abaixo.
         const [orders] = await pool.query(`
             SELECT id, customer_name, description, total_price, created_at 
             FROM orders 
             ORDER BY created_at ASC
         `);
 
-        // Cabeçalho do arquivo CSV
         let csvContent = "ID do Pedido;Cliente;Itens Pedidos;Valor Total (R$);Data do Pedido\n";
 
-        // Preenche o conteúdo com os dados
         orders.forEach(order => {
             const dateFormatted = order.created_at ? new Date(order.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }).replace(',', '') : 'Sem data';
             const cleanDescription = order.description ? order.description.replace(/[\n\r;]/g, ' ') : 'Marmita sem descrição';
@@ -262,22 +282,19 @@ app.get('/admin/export', async (req, res) => {
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', 'attachment; filename=relatorio_vendas_marmitatech.csv');
 
-        // BOM para manter acentuação correta no Excel
         const BOM = "\uFEFF";
         res.send(BOM + csvContent);
 
     } catch (error) {
         console.error("Erro detalhado ao exportar o relatório:", error);
-        // Agora o erro exato do banco de dados aparecerá na sua tela para facilitar o debug
         res.status(500).send(`Erro interno ao gerar o arquivo de relatório. Detalhe do erro: ${error.message}`);
     }
 });
 
 // ==========================================
-// CARREGAMENTO DO DASHBOARD PRINCIPAL
+// DASHBOARD PRINCIPAL (CORRIGIDA COM ASYNC)
 // ==========================================
-
-app.get('/dashboard', async (req, res) => {
+app.get('/dashboard', verificarAutenticacao, async (req, res) => {
     try {
         const [ingredients] = await pool.query('SELECT * FROM ingredients');
         const [preMadeMarmitas] = await pool.query('SELECT * FROM pre_made_marmitas');
@@ -290,12 +307,22 @@ app.get('/dashboard', async (req, res) => {
     }
 });
 
+// LOGOUT
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return res.redirect('/dashboard');
+        }
+        res.clearCookie('connect.sid'); 
+        res.redirect('/login');
+    });
+});
+
 // ==========================================
 // INICIALIZAÇÃO DO SERVIDOR
 // ==========================================
-
 connectWithRetry().then(() => {
-    app.listen(3000, () => console.log('🚀 MARMITATECH PRO ONLINE NA PORTA 3000'));
+    app.listen(3000, () => console.log('KELVINS BISTRO ONLINE'));
 }).catch(err => {
     console.error('Falha crítica na inicialização:', err);
     process.exit(1);

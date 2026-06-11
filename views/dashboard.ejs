@@ -347,6 +347,27 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
+
+        .btn-logout{
+            background-color: var(--azul-escuro);
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-logout:hover {
+            background-color: #FD582F;
+            color: #83110C;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
     </style>
 </head>
 
@@ -354,7 +375,11 @@
     <div class="estilo-header">
         <h1 style="margin: 0;">
             <div class="texto-neon">Kelvin's Bistrô</div></h1>
-        <a href="/admin/export" class="btn-export">Baixar Relatório (CSV)</a>
+        <div>
+            <a href="/register" class="btn-export">Registrar Usuário</a>
+            <a href="/admin/export" class="btn-export">Baixar Relatório (CSV)</a>
+            <a href="/logout" class="btn-logout">Logout</a>
+        </div>
     </div>
 
     <div class="grid">
