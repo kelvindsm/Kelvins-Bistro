@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelvin's Bistrô - Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Praise&display=swap" rel="stylesheet">
     <style>
         /* PALETA DE CORES EXTRAÍDA DA IMAGEM */
         :root {
@@ -53,6 +56,22 @@
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(10.6px);
             -webkit-backdrop-filter: blur(20px);
+        }
+
+        .texto-neon{
+            font-family: "Praise", cursive;
+            font-size: larger;
+            font-style: normal;
+
+            text-shadow: 
+                #FFF 0px 0px 5px,
+                #FFF 0px 0px 10px,
+                #28648B 0px 0px 15px, 
+                #28648B 0px 0px 20px, 
+                #28648B 0px 0px 30px, 
+                #28648B 0px 0px 40px, 
+                #28648B 0px 0px 50px;
+            color: #FFFFFF;
         }
 
         h1 {
@@ -250,7 +269,7 @@
             background: var(--pessego);
             border-radius: 12px;
             padding: 16px;
-            border-top: 5px solid var(--marrom);
+            border-bottom: 5px solid var(--marrom);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
 
@@ -333,8 +352,8 @@
 
 <body>
     <div class="estilo-header">
-        <h1 style="margin: 0; padding: 0; border-bottom: none; background: none; border-radius: 0; font-size: 28px;">
-            Painel Administrativo - Kelvin's Bistrô</h1>
+        <h1 style="margin: 0;">
+            <div class="texto-neon">Kelvin's Bistrô</div></h1>
         <a href="/admin/export" class="btn-export">Baixar Relatório (CSV)</a>
     </div>
 
