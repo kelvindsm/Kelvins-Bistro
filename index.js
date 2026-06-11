@@ -80,12 +80,9 @@ function validateInput(data) {
 
 // Middleware de autenticação
 function verificarAutenticacao(req, res, next) {
-    // Se existir o usuário guardado na sessão, permite o acesso
     if (req.session && req.session.usuarioLogado) {
-        return next(); // "Pode passar!"
+        return next();
     }
-    
-    // Se não estiver logado, redireciona para a página de login
     res.redirect('/login'); 
 }
 
@@ -93,8 +90,13 @@ function verificarAutenticacao(req, res, next) {
 // ROTAS DE AUTENTICAÇÃO
 // ==========================================
 
-// Ajustamos o GET para sempre passar a variável error (inicialmente nula)
-app.get('/', (req, res) => res.render('login', { error: null }));
+// Rota principal (Raiz do site)
+app.get('/', (req, res) => {
+    if (req.session.usuarioLogado) {
+        return res.redirect('/dashboard');
+    }
+    return res.redirect('/login');
+});
 app.get('/login', (req, res) => res.render('login', { error: null }));
 
 app.get('/register', verificarAutenticacao, async (req, res) => res.render('register'));
@@ -137,10 +139,17 @@ app.post('/login', async (req, res) => {
 
         const user = rows[0];
         const isPasswordValid = await bcrypt.compare(password, user.password);
+        
         if(isPasswordValid){
-            // CORRIGIDO: de 'usuario' para 'username'
             req.session.usuarioLogado = { nome: username }; 
-            return res.redirect('/dashboard');
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Erro ao salvar a sessão:', err);
+                    return res.render('login', { error: 'Erro interno ao iniciar a sessão.' });
+                }
+                return res.redirect('/dashboard');
+            });
+            
         } else {
             return res.render('login', { error: 'Senha incorreta. Tente novamente.' });
         }
@@ -148,6 +157,17 @@ app.post('/login', async (req, res) => {
         console.error(err);
         return res.render('login', { error: 'Erro interno ao realizar login.' });
     }
+});
+
+// LOGOUT
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return res.redirect('/dashboard');
+        }
+        res.clearCookie('connect.sid'); 
+        res.redirect('/login');
+    });
 });
 
 // ==========================================
@@ -258,7 +278,7 @@ app.post('/orders/:id/advance', async (req, res) => {
 });
 
 // ==========================================
-// ROTA DE EXPORTAÇÃO (CORRIGIDA COM ASYNC)
+// ROTA DE EXPORTAÇÃO
 // ==========================================
 app.get('/admin/export', verificarAutenticacao, async (req, res) => {
     try {
@@ -292,7 +312,7 @@ app.get('/admin/export', verificarAutenticacao, async (req, res) => {
 });
 
 // ==========================================
-// DASHBOARD PRINCIPAL (CORRIGIDA COM ASYNC)
+// DASHBOARD PRINCIPAL
 // ==========================================
 app.get('/dashboard', verificarAutenticacao, async (req, res) => {
     try {
@@ -305,17 +325,6 @@ app.get('/dashboard', verificarAutenticacao, async (req, res) => {
         console.error(err);
         res.status(500).send("Erro ao carregar o dashboard.");
     }
-});
-
-// LOGOUT
-app.get('/logout', (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            return res.redirect('/dashboard');
-        }
-        res.clearCookie('connect.sid'); 
-        res.redirect('/login');
-    });
 });
 
 // ==========================================
